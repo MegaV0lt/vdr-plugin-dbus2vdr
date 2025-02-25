@@ -352,8 +352,11 @@ Interface "shutdown"
 
 Interface "skin"
 ----------------
-- display a message at the OSD
+- display a message on the OSD
   vdr-dbus-send.sh /Skin skin.QueueMessage string:'message text'
+
+- display a message with a certain type (represented with different colors by VDR) on the OSD
+  vdr-dbus-send.sh /Skin skin.SendMessage string:'message text' string:'info|warning|error'
 
 - get information about available skins
   vdr-dbus-send.sh /Skin skin.ListSkins

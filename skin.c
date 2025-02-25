@@ -11,7 +11,7 @@ namespace cDBusSkinHelper
     "<!DOCTYPE node PUBLIC \"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN\"\n"
     "       \"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">\n"
     "<node>\n"
-    "  <interface name=\""DBUS_VDR_SKIN_INTERFACE"\">\n"
+    "  <interface name=\"" DBUS_VDR_SKIN_INTERFACE "\">\n"
     "    <method name=\"CurrentSkin\">\n"
     "      <arg name=\"replycode\"    type=\"i\" direction=\"out\"/>\n"
     "      <arg name=\"skin\"         type=\"(iss)\" direction=\"out\"/>\n"
@@ -27,6 +27,12 @@ namespace cDBusSkinHelper
     "    </method>\n"
     "    <method name=\"QueueMessage\">\n"
     "      <arg name=\"messageText\"  type=\"s\" direction=\"in\"/>\n"
+    "      <arg name=\"replycode\"    type=\"i\" direction=\"out\"/>\n"
+    "      <arg name=\"replymessage\" type=\"s\" direction=\"out\"/>\n"
+    "    </method>\n"
+    "    <method name=\"SendMessage\">\n"
+    "      <arg name=\"messageText\"  type=\"s\" direction=\"in\"/>\n"
+    "      <arg name=\"messageType\"  type=\"s\" direction=\"in\"/>\n"
     "      <arg name=\"replycode\"    type=\"i\" direction=\"out\"/>\n"
     "      <arg name=\"replymessage\" type=\"s\" direction=\"out\"/>\n"
     "    </method>\n"
@@ -108,8 +114,43 @@ namespace cDBusSkinHelper
 
     cDBusHelper::SendReply(Invocation, replyCode, replyMessage);
   };
-}
 
+  static void SendMessage(cDBusObject *Object, GVariant *Parameters, GDBusMethodInvocation *Invocation)
+  {
+    const char *messageText = NULL;
+    const char *messageType = NULL;
+    g_variant_get(Parameters, "(&ss)", &messageText, &messageType);
+
+    gint32 replyCode = 501;
+    cString replyMessage;
+    if ((messageText == NULL) || (*messageText == 0)) {
+       replyMessage = "Missing message";
+       goto end;
+    }
+    if ((messageType == NULL) || (*messageType == 0)) {
+       replyMessage = "Missing message type";
+       goto end;
+    }
+
+    eMessageType mtype;
+    if (strcmp(messageType, "info") == 0) {
+        mtype = mtInfo;
+    } else if (strcmp(messageType, "warning") == 0) {
+        mtype = mtWarning;
+    } else if (strcmp(messageType, "error") == 0) {
+        mtype = mtError;
+    } else {
+        replyMessage = "invalid message type, must be one of info, warning, error";
+        goto end;
+    }
+
+    Skins.QueueMessage(mtype, messageText);
+    replyCode = 250;
+    replyMessage = "Message queued";
+end:
+    cDBusHelper::SendReply(Invocation, replyCode, replyMessage);
+  };
+}
 
 cDBusSkin::cDBusSkin(void)
 :cDBusObject("/Skin", cDBusSkinHelper::_xmlNodeInfo)
@@ -118,6 +159,7 @@ cDBusSkin::cDBusSkin(void)
   AddMethod("ListSkins", cDBusSkinHelper::ListSkins);
   AddMethod("SetSkin", cDBusSkinHelper::SetSkin);
   AddMethod("QueueMessage", cDBusSkinHelper::QueueMessage);
+  AddMethod("SendMessage", cDBusSkinHelper::SendMessage);
 }
 
 cDBusSkin::~cDBusSkin(void)
