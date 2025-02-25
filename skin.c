@@ -127,13 +127,11 @@ namespace cDBusSkinHelper
        replyMessage = "Missing message";
        goto end;
     }
-    if ((messageType == NULL) || (*messageType == 0)) {
-       replyMessage = "Missing message type";
-       goto end;
-    }
 
     eMessageType mtype;
-    if (strcmp(messageType, "info") == 0) {
+    if ((messageType == NULL) || (*messageType == 0)) {
+        mtype = mtInfo;  // Use default if message type not specified
+    } else if (strcmp(messageType, "info") == 0) {
         mtype = mtInfo;
     } else if (strcmp(messageType, "warning") == 0) {
         mtype = mtWarning;
